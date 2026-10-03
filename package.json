@@ -31,6 +31,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
+    "prepack": "npm run build",
     "test": "npm run build && node --test \"test/*.test.mjs\""
   },
   "peerDependencies": {

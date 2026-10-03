@@ -11,6 +11,7 @@
 		"@sveltejs/kit": "3.0.0",
 		"@sveltejs/vite-plugin-svelte": "7.3.1",
 		"svelte": "5.57.1",
+		"sst": "npm:@sst-community/sst@4.17.2",
 		"typescript": "6.0.3",
 		"vite": "8.3.2"
 	},
