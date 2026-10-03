@@ -3,13 +3,14 @@
   "compilerOptions": {
     "declaration": true,
     "strict": true,
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "module": "ES2022",
+    "rootDir": "./src",
     "outDir": "./dist",
-    "target": "ES2022"
+    "target": "ES2022",
+    "types": ["node"]
   }
 }

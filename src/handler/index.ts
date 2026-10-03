@@ -1,12 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { installPolyfills } from "@sveltejs/kit/node/polyfills";
-import type { Server as ServerType } from "@sveltejs/kit/types";
-// @ts-ignore
-import { Server } from "../index.js";
-// @ts-ignore
-import { manifest } from "../manifest.js";
-// @ts-ignore
+// @ts-ignore Generated next to the server output by `builder.generateServerInstance`
+import { server } from "../server.js";
+// @ts-ignore Written by the adapter when it runs
 import prerenderedFiles from "./prerendered-file-list.js";
 import type {
   APIGatewayProxyEventV2,
@@ -17,10 +13,7 @@ import { InternalEvent, convertFrom, convertTo } from "./event-mapper.js";
 import { debug } from "./logger.js";
 import { isBinaryContentType } from "./binary.js";
 
-installPolyfills();
-
-const app: ServerType = new Server(manifest);
-await app.init({ env: process.env as Record<string, string> });
+await server.init({ env: process.env as Record<string, string | undefined> });
 
 export async function handler(
   event: APIGatewayProxyEventV2 | CloudFrontRequestEvent | APIGatewayProxyEvent
@@ -55,11 +48,11 @@ export async function handler(
     headers: internalEvent.headers,
     body: ["GET", "HEAD"].includes(internalEvent.method)
       ? undefined
-      : internalEvent.body,
+      : new Uint8Array(internalEvent.body),
   };
   debug("request", requestUrl, requestProps);
   const request = new Request(requestUrl, requestProps);
-  const response: Response = await app.respond(request, {
+  const response: Response = await server.respond(request, {
     getClientAddress: () => internalEvent.remoteAddress,
   });
   debug("response", response);
