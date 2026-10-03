@@ -23,13 +23,29 @@ export default function (): Adapter {
       builder.writeClient(clientDir);
       const prerenderedFiles = builder.writePrerendered(prerenderedDir);
 
-      // Create Lambda function
+      // Create Lambda function. Both branches leave a `server.js` in the server
+      // folder that exports `server`, which is all the Lambda handler imports.
       builder.log.minor("Generating server function...");
-      // SvelteKit 3 writes the server instance (`export const server`) next to
-      // its own server output. Generate it there, then copy everything over.
-      const kitServerDir = builder.getServerDirectory();
-      builder.generateServerInstance(path.join(kitServerDir, "server.js"));
-      builder.copy(kitServerDir, serverDir);
+      if (typeof builder.generateServerInstance === "function") {
+        // SvelteKit 3 writes the server instance next to its own server output.
+        // Generate it there, then copy everything over.
+        const kitServerDir = builder.getServerDirectory();
+        builder.generateServerInstance(path.join(kitServerDir, "server.js"));
+        builder.copy(kitServerDir, serverDir);
+      } else {
+        // SvelteKit 2 has no `generateServerInstance`. Copy the server output
+        // and build the instance from the `Server` class and manifest it wrote.
+        builder.writeServer(serverDir);
+        fs.writeFileSync(
+          path.join(serverDir, "server.js"),
+          [
+            `import { Server } from "./index.js";`,
+            `import { manifest } from "./manifest.js";`,
+            `export const server = new Server(manifest);`,
+            ``,
+          ].join("\n")
+        );
+      }
       // copy over handler files in server handler folder
       builder.copy(
         path.join(__dirname, "handler"),

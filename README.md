@@ -10,6 +10,8 @@ Install the adapter to your project’s dependencies using your preferred packag
   npm install svelte-kit-sst
 ```
 
+One package works with SvelteKit 2 and 3. It's tested with 2.70 and 3.0.
+
 ### SvelteKit 3
 
 SvelteKit 3 keeps its configuration in `vite.config.ts`. Add the adapter to the `sveltekit()` plugin.
@@ -28,11 +30,11 @@ SvelteKit 3 keeps its configuration in `vite.config.ts`. Add the adapter to the 
   });
 ```
 
-This version of the adapter requires `@sveltejs/kit` 3 and Node 22.17 or newer.
+SvelteKit 3 itself requires Node 22.17 or newer.
 
 ### SvelteKit 2
 
-SvelteKit 2 and earlier read the adapter from `svelte.config.js`. Use `svelte-kit-sst@2`.
+SvelteKit 2 reads the adapter from `svelte.config.js`. The install and the import are the same.
 
 ```diff
 + import adapter from "svelte-kit-sst";

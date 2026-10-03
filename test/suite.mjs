@@ -11,8 +11,6 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const fixture = path.join(root, 'test', 'fixture');
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'svelte-kit-sst-'));
 const HOST = 'example.test';
 
 function run(cmd, args, cwd, env = {}) {
@@ -59,10 +57,23 @@ function v2(rawPath, { method = 'GET', query = '', headers = {}, cookies, body, 
 	};
 }
 
+/**
+ * @param {object} options
+ * @param {string} options.name label for the report, e.g. "SvelteKit 3"
+ * @param {string} options.fixtureDir folder name under test/
+ * @param {string} options.configFile file in the fixture that imports the adapter
+ * @param {string} options.alias import alias for src/lib: "#lib" (Kit 3) or "$lib" (Kit 2)
+ * @param {RegExp} options.manifestFields matches the fields sst.aws.SvelteKit reads
+ */
+export function defineSuite({ name, fixtureDir, configFile, alias, manifestFields }) {
+const fixture = path.join(root, 'test', fixtureDir);
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'svelte-kit-sst-'));
+
 let handler;
 let prerenderedDir;
 let output;
 
+describe(name, () => {
 before(async () => {
 	assert.ok(fs.existsSync(path.join(root, 'dist', 'index.js')), 'run `npm run build` first');
 
@@ -98,10 +109,9 @@ describe('output layout (what sst.aws.SvelteKit relies on)', () => {
 		assert.match(src, /from "\.\.\/server\.js"/);
 	});
 
-	it('writes manifest.js with the app_dir and app_path fields', () => {
+	it('writes manifest.js with the app dir and app path fields', () => {
 		const m = fs.readFileSync(path.join(output, 'server/manifest.js'), 'utf8');
-		assert.match(m, /app_dir: "_app"/);
-		assert.match(m, /app_path: "_app"/);
+		assert.match(m, manifestFields);
 	});
 });
 
@@ -224,14 +234,16 @@ describe('adapter.supports', () => {
 		const copy = path.join(tmp, 'read-fixture');
 		fs.cpSync(fixture, copy, { recursive: true, filter: (s) => !/[\\/](\.svelte-kit|node_modules)([\\/]|$)/.test(s) });
 		fs.symlinkSync(path.join(fixture, 'node_modules'), path.join(copy, 'node_modules'));
-		fs.writeFileSync(path.join(copy, 'vite.config.ts'), fs.readFileSync(path.join(copy, 'vite.config.ts'), 'utf8').replace('../../dist/index.js', path.join(root, 'dist', 'index.js')));
+		fs.writeFileSync(path.join(copy, configFile), fs.readFileSync(path.join(copy, configFile), 'utf8').replace('../../dist/index.js', path.join(root, 'dist', 'index.js')));
 		fs.mkdirSync(path.join(copy, 'src/routes/uses-read'), { recursive: true });
 		fs.writeFileSync(
 			path.join(copy, 'src/routes/uses-read/+server.ts'),
-			`import { read } from '$app/server';\nimport logo from '#lib/assets/favicon.svg';\nexport const GET = () => read(logo);\n`
+			`import { read } from '$app/server';\nimport logo from '${alias}/assets/favicon.svg';\nexport const GET = () => read(logo);\n`
 		);
 		const b = run('npx', ['vite', 'build'], copy);
 		assert.notEqual(b.status, 0, 'expected the build to fail');
 		assert.match(b.out, /doesn't support `read`/);
 	});
 });
+});
+}
